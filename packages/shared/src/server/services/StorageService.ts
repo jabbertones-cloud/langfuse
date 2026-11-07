@@ -251,7 +251,10 @@ function createSecureAzureBlobRequestPolicyFactory(
   };
 }
 
-async function storageBodyToBytes(body: unknown): Promise<Uint8Array> {
+async function storageBodyToBytes(
+  body: unknown,
+  maxBytes: number = env.LANGFUSE_S3_EVENT_UPLOAD_MAX_BYTES ?? 100 * 1024 * 1024,
+): Promise<Uint8Array> {
   if (!body) return new Uint8Array();
   if (body instanceof Uint8Array) return body;
   if (body instanceof ArrayBuffer) return new Uint8Array(body);
@@ -263,37 +266,48 @@ async function storageBodyToBytes(body: unknown): Promise<Uint8Array> {
     [Symbol.asyncIterator]?: () => AsyncIterator<unknown>;
   };
   if (candidate.transformToByteArray) {
-    return candidate.transformToByteArray();
+    const bytes = await candidate.transformToByteArray();
+    if (bytes.byteLength > maxBytes) {
+      throw new Error(`Storage download exceeds size limit of ${maxBytes} bytes`);
+    }
+    return bytes;
   }
   if (candidate.arrayBuffer) {
-    return new Uint8Array(await candidate.arrayBuffer());
+    const buf = await candidate.arrayBuffer();
+    if (buf.byteLength > maxBytes) {
+      throw new Error(`Storage download exceeds size limit of ${maxBytes} bytes`);
+    }
+    return new Uint8Array(buf);
   }
 
   const chunks: Uint8Array[] = [];
+  let totalBytes = 0;
   if (candidate[Symbol.asyncIterator]) {
     for await (const chunk of body as AsyncIterable<unknown>) {
-      chunks.push(
-        chunk instanceof Uint8Array
-          ? chunk
-          : new Uint8Array(Buffer.from(chunk as string)),
-      );
+      const u8 = chunk instanceof Uint8Array ? chunk : new Uint8Array(Buffer.from(chunk as string));
+      totalBytes += u8.byteLength;
+      if (totalBytes > maxBytes) {
+        throw new Error(`Storage download exceeds size limit of ${maxBytes} bytes`);
+      }
+      chunks.push(u8);
     }
   } else if (candidate.getReader) {
     const reader = candidate.getReader();
     while (true) {
       const { done, value } = await reader.read();
       if (done) break;
+      totalBytes += value.byteLength;
+      if (totalBytes > maxBytes) {
+        await reader.cancel();
+        throw new Error(`Storage download exceeds size limit of ${maxBytes} bytes`);
+      }
       chunks.push(value);
     }
   } else {
     throw new TypeError("Unsupported storage download body");
   }
 
-  const byteLength = chunks.reduce(
-    (total, chunk) => total + chunk.byteLength,
-    0,
-  );
-  const bytes = new Uint8Array(byteLength);
+  const bytes = new Uint8Array(totalBytes);
   let offset = 0;
   for (const chunk of chunks) {
     bytes.set(chunk, offset);
