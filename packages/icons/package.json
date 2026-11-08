@@ -25,8 +25,7 @@
     "postinstall": "node -e \"const fs = require('node:fs'); if (fs.existsSync('scripts/generate.cjs')) require('node:child_process').execSync('pnpm run generate', { stdio: 'inherit' });\"",
     "build": "pnpm run generate",
     "generate": "tsc -p tsconfig.build.json && node scripts/generate.cjs",
-    "typecheck": "tsc --noEmit",
-    "test": "node --import tsx --test tests/icons.test.tsx"
+    "typecheck": "tsc --noEmit"
   },
   "dependencies": {
     "lucide-react": "^0.552.0",

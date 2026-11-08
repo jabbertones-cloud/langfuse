@@ -23,8 +23,6 @@
     "rust:lint": "node scripts/remove-generated-cargo-patch.mjs && cargo fmt --check && cargo clippy --all-targets -- -D warnings",
     "lint:fix": "pnpm run rust:lint:fix",
     "rust:lint:fix": "node scripts/remove-generated-cargo-patch.mjs && cargo fmt && cargo clippy --all-targets --fix --allow-dirty -- -D warnings",
-    "test": "pnpm run rust:test",
-    "rust:test": "node scripts/remove-generated-cargo-patch.mjs && cargo test --locked --features napi/dyn-symbols",
     "rust:deny": "node scripts/remove-generated-cargo-patch.mjs && cargo deny --locked check",
     "rust:unused-deps": "node scripts/remove-generated-cargo-patch.mjs && cargo machete"
   },

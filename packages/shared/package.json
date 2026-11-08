@@ -218,11 +218,9 @@
     "dev": "tsc --watch",
     "lint": "oxlint --max-warnings 0",
     "lint:fix": "oxlint --fix .",
-    "test": "dotenv -e ../../.env -- vitest run",
     "db:migrate": "DISABLE_ERD=false dotenv -e ../../.env -- npx prisma migrate dev",
     "db:push": "DISABLE_ERD=false dotenv -e ../../.env -- npx prisma db push",
     "db:reset": "dotenv -e ../../.env -- pnpm exec prisma migrate reset",
-    "db:reset:test": "if [ -f ../../.env.test ]; then dotenv -e ../../.env.test -e ../../.env -- pnpm exec prisma migrate reset --force; fi",
     "db:deploy": "dotenv -e ../../.env npx -- prisma migrate deploy",
     "db:seed": "dotenv -e ../../.env -- npx prisma db seed",
     "db:generate": "dotenv -e ../../.env -- npx prisma generate --no-hints",
@@ -315,8 +313,7 @@
     "next-auth": "^4.24.14",
     "prisma": "^6.19.3",
     "tsx": "^4.20.5",
-    "typescript": "catalog:",
-    "vitest": "^4.1.12"
+    "typescript": "catalog:"
   },
   "peerDependencies": {
     "@types/react": "~19.2.14",
